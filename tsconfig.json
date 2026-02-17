@@ -14,7 +14,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "baseUrl": "./pixiBlastGame",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
