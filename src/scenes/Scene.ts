@@ -1,17 +1,11 @@
-import * as PIXI from 'pixi.js';
+import { Container } from 'pixi.js'
 
-export abstract class Scene {
-    public container: PIXI.Container;
-
-    constructor() {
-        this.container = new PIXI.Container();
-    }
-
+export abstract class Scene extends Container {
     /** вызывается при показе сцены */
-    abstract onEnter(): void;
+    onEnter(): void {}
 
     /** вызывается при скрытии сцены */
-    abstract onExit(): void;
+    onExit(): void {}
 
     /** игровой цикл */
     update(delta: number): void {}
