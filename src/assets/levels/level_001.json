@@ -1,0 +1,18 @@
+{
+  "rows": 8,
+  "cols": 8,
+  "moves": 30,
+  "board": [
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "purple"
+  ],
+  "goals": [
+    {
+      "type": "red",
+      "target": 30
+    }
+  ]
+}

@@ -22,9 +22,6 @@ export class Game {
 
         document.getElementById('pixi-container')!.appendChild(this.app.canvas)
 
-        console.log(this.app.screen)
-        console.log(this.app.canvas.getBoundingClientRect())
-
         this.root = new Container()
         this.app.stage.addChild(this.root)
 
