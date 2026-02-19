@@ -2,8 +2,8 @@ import { Application, Container, TickerCallback } from 'pixi.js'
 import { SceneManager } from './SceneManager'
 import { GameScene } from '@/scenes/GameScene'
 
-export const GAME_WIDTH = 1024
-export const GAME_HEIGHT = 720
+export const GAME_WIDTH = 1600
+export const GAME_HEIGHT = 900
 
 export class Game {
     public app!: Application

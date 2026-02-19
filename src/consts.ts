@@ -1,0 +1,8 @@
+export const bg_frame_moves = 'bg_frame_moves'
+export const bg_moves = 'bg_moves'
+export const slot_frame_moves = 'slot_frame_moves'
+export const bg_booster = 'bg_booster'
+export const icon_booster_bomb = 'icon_booster_bomb'
+export const icon_booster_teleport = 'icon_booster_teleport'
+export const img_bg_game = 'img_bg_game'
+export const bg_frame_play = 'bg_frame_play'
