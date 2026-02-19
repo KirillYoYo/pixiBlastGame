@@ -22,6 +22,8 @@ export class CellView extends Container {
 
         this.draw(size)
         this.addChild(this.gfx)
+        this.eventMode = 'static'
+        this.cursor = 'pointer'
     }
 
     draw(size: number) {

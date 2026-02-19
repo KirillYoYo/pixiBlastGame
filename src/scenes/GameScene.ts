@@ -5,7 +5,7 @@ import levelData from '@/assets/levels/level_001.json'
 import { LevelData } from '@/game/level/LevelData'
 import { GAME_HEIGHT, GAME_WIDTH } from '@/core/Game'
 import { GameLayout } from '@/UI/Layout'
-import { Assets, NineSliceSprite, Sprite } from 'pixi.js'
+import { Assets, Graphics, NineSliceSprite, Sprite } from 'pixi.js'
 import {
     bg_booster,
     bg_frame_moves,
@@ -62,6 +62,16 @@ export class GameScene extends Scene {
         playBg.height = this.boardView.height + gap
         playBg.x = (GAME_WIDTH - this.boardView.width) / 2 - gap / 2
         playBg.y = this.layout.content.height / 2 - this.boardView.height / 2 - gap / 2
+
+        /**/
+        const mask = new Graphics()
+            .beginFill(0xffffff)
+            .drawRect(0, 0, playBg.width, playBg.height)
+            .endFill()
+        mask.x = playBg.x
+        mask.y = playBg.y
+        this.boardView.mask = mask
+        this.layout.content.addChild(mask)
 
         this.boardView.x = (GAME_WIDTH - this.boardView.width) / 2
         this.boardView.y = this.layout.content.height / 2 - this.boardView.height / 2
