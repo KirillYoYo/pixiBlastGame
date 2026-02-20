@@ -2,6 +2,7 @@ import { Container, Ticker } from 'pixi.js'
 import { BoardModel } from './BoardModel'
 import { CellView } from './CellView'
 import { CellModel } from './CellModel'
+import { EventBus, Events } from '@/game/store/EventBus'
 
 export class BoardView extends Container {
     private board: BoardModel
@@ -29,7 +30,7 @@ export class BoardView extends Container {
             }
         }
 
-        this.board.on('boardUpdated', ({ removed, moved, spawned }) => {
+        EventBus.on(Events.BOARD_UPDATED, ({ removed, moved, spawned }) => {
             // удаляем клетки
             removed.forEach(cell => {
                 const view = this.cellViews.get(cell.id)

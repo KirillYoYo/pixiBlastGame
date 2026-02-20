@@ -1,5 +1,6 @@
 import { Assets, Container, NineSliceSprite, Sprite, Text } from 'pixi.js'
 import { bg_frame_moves, bg_moves, slot_frame_moves } from '@/consts'
+import { EventBus, Events } from '@/game/store/EventBus'
 
 export class Header extends Container {
     constructor(height: number, width: number) {
@@ -61,5 +62,9 @@ export class Header extends Container {
         scoresText.x =
             scoresBg.getBounds().x + scoresBg.getBounds().width / 2 - scoresText.width / 2
         scoresText.y = scoresBg.y + scoresBg.getBounds().height / 2 - scoresText.height / 2
+
+        EventBus.on(Events.SCORE_CHANGED, scores => {
+            scoresText.text = scores
+        })
     }
 }

@@ -1,6 +1,19 @@
 import { CellModel } from './CellModel'
 import { CellType } from '../types/CellType'
 import { EventEmitter } from 'pixi.js'
+import { EventBus, Events } from '@/game/store/EventBus'
+
+export interface movedType {
+    cell: CellModel
+    fromRow: number
+    toRow: number
+}
+export interface spawnedType {
+    cell: CellModel
+    row: number
+    col: number
+    spawnRow: number
+}
 
 export class BoardModel extends EventEmitter {
     readonly rows: number
@@ -52,8 +65,8 @@ export class BoardModel extends EventEmitter {
         const removed = group.slice()
         removed.forEach(cell => this.removeCell(cell))
 
-        const moved: { cell: CellModel; fromRow: number; toRow: number }[] = []
-        const spawned: { cell: CellModel; row: number; col: number; spawnRow: number }[] = []
+        const moved: movedType[] = []
+        const spawned: spawnedType[] = []
 
         // падение и новые тайлы
         for (let col = 0; col < this.cols; col++) {
@@ -95,7 +108,7 @@ export class BoardModel extends EventEmitter {
             }
         }
 
-        this.emit('boardUpdated', { removed, moved, spawned })
+        EventBus.emit(Events.BOARD_UPDATED, { removed, moved, spawned })
     }
 
     private findGroup(start: CellModel): CellModel[] {

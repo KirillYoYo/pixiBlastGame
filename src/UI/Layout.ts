@@ -21,7 +21,6 @@ export class GameLayout extends Container {
         this.addChild(this.header, this.content, this.footer)
         bg.height = GAME_HEIGHT
         bg.x = GAME_WIDTH / 2 - bg.width / 2
-        console.log('bg.x', bg.x)
     }
 
     layout() {
