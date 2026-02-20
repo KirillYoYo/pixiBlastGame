@@ -70,8 +70,6 @@ export class GameScene extends Scene {
             .endFill()
         mask.x = playBg.x
         mask.y = playBg.y
-        this.boardView.mask = mask
-        this.layout.content.addChild(mask)
 
         this.boardView.x = (GAME_WIDTH - this.boardView.width) / 2
         this.boardView.y = this.layout.content.height / 2 - this.boardView.height / 2

@@ -18,7 +18,7 @@ export class GameLayout extends Container {
         super()
         const bg = new Sprite(Assets.get(img_bg_game))
         this.addChild(bg)
-        this.addChild(this.header, this.content, this.footer)
+        this.addChild(this.content, this.footer, this.header)
         bg.height = GAME_HEIGHT
         bg.x = GAME_WIDTH / 2 - bg.width / 2
     }
