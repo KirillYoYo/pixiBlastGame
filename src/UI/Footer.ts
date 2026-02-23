@@ -7,6 +7,7 @@ import {
     slot_frame_moves,
 } from '@/consts'
 import { Button } from '@/UI/Button'
+import { EventBus, Events } from '@/game/store/EventBus'
 
 export class Footer extends Container {
     constructor(height: number, width: number) {
@@ -20,7 +21,7 @@ export class Footer extends Container {
             label: '0',
             fontSize: 28,
             fontColor: 0xffffff,
-            onClick: () => console.log('bomb'),
+            onClick: () => EventBus.emit(Events.SELECT_BOOSTER, 'bomb'),
         })
         const teleportButton = new Button({
             // width: 220,
@@ -30,7 +31,7 @@ export class Footer extends Container {
             label: '0',
             fontSize: 28,
             fontColor: 0xffffff,
-            onClick: () => console.log('teleport'),
+            onClick: () => EventBus.emit(Events.SELECT_BOOSTER, 'teleport'),
         })
 
         this.addChild(bombButton as unknown as PIXI.Container)
@@ -38,5 +39,22 @@ export class Footer extends Container {
         bombButton.y = height / 2 - bombButton.getBounds().height / 2
         teleportButton.y = height / 2 - teleportButton.getBounds().height / 2
         teleportButton.x = bombButton.x + bombButton.width
+
+        EventBus.on(Events.BOOSTERS_UPDATED, value => {
+            teleportButton.setLabel(value.teleport + '')
+            bombButton.setLabel(value.bomb + '')
+        })
+
+        EventBus.on(Events.SELECT_BOOSTER, name => {
+            bombButton.scale = 1
+            teleportButton.scale = 1
+
+            if (name === 'bomb') {
+                bombButton.scale = 1.2
+            }
+            if (name === 'teleport') {
+                teleportButton.scale = 1.2
+            }
+        })
     }
 }

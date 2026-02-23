@@ -2,6 +2,7 @@ import { CellModel } from './CellModel'
 import { CellType } from '../types/CellType'
 import { EventEmitter } from 'pixi.js'
 import { EventBus, Events } from '@/game/store/EventBus'
+import { LevelData } from '@/game/level/LevelData'
 
 export interface movedType {
     cell: CellModel
@@ -19,13 +20,22 @@ export class BoardModel extends EventEmitter {
     readonly rows: number
     readonly cols: number
     cells: CellModel[][] = []
+    selectedBooster: string | null = null
+    boosters: LevelData['boosters']
+    teleportStep: CellModel | null = null
 
     private idCounter = 0
 
-    constructor(rows: number, cols: number, layout?: CellType[][]) {
+    constructor(
+        rows: number,
+        cols: number,
+        boosters: LevelData['boosters'],
+        layout?: CellType[][]
+    ) {
         super()
         this.rows = rows
         this.cols = cols
+        this.boosters = boosters
 
         for (let r = 0; r < rows; r++) {
             this.cells[r] = []
@@ -34,6 +44,15 @@ export class BoardModel extends EventEmitter {
                 this.cells[r][c] = new CellModel(this.idCounter++, r, c, type)
             }
         }
+
+        EventBus.on(Events.SELECT_BOOSTER, (name: string) => {
+            this.selectedBooster = name
+        })
+
+        // ;-)
+        setTimeout(() => {
+            EventBus.emit(Events.BOOSTERS_UPDATED, this.boosters)
+        }, 0)
     }
 
     getCell(row: number, col: number): CellModel | null {
@@ -59,7 +78,14 @@ export class BoardModel extends EventEmitter {
         const start = this.getCell(row, col)
         if (!start) return
 
-        const group = this.findGroup(start)
+        let group = this.findGroup(start)
+        if (this.selectedBooster) {
+            group = this.boosterHandler(this.selectedBooster, start) || []
+            if (this.selectedBooster !== 'bomb') {
+                return
+            }
+        }
+
         if (group.length < 2) return
 
         const removed = group.slice()
@@ -109,6 +135,36 @@ export class BoardModel extends EventEmitter {
         }
 
         EventBus.emit(Events.BOARD_UPDATED, { removed, moved, spawned })
+        if (this.selectedBooster) {
+            this.boosters = {
+                ...this.boosters,
+                [this.selectedBooster]: this.boosters[this.selectedBooster] - 1,
+            }
+            EventBus.emit(Events.BOOSTERS_UPDATED, this.boosters)
+            EventBus.emit(Events.SELECT_BOOSTER, '')
+            this.selectedBooster = null
+        }
+    }
+
+    boosterHandler(booster: string, cell) {
+        switch (booster) {
+            case 'teleport':
+                return this.teleportHandler(cell)
+            case 'bomb':
+                return this.getBombNeighbors(cell)
+        }
+    }
+
+    teleportHandler(cell: CellModel) {
+        if (!this.teleportStep) {
+            this.teleportStep = cell
+        } else {
+            this.swapCells(this.teleportStep.row, this.teleportStep.col, cell.row, cell.col)
+            EventBus.emit(Events.CELLS_UPDATED, this.cells)
+            EventBus.emit(Events.SELECT_BOOSTER, '')
+            this.selectedBooster = null
+            this.teleportStep = null
+        }
     }
 
     private findGroup(start: CellModel): CellModel[] {
@@ -144,6 +200,33 @@ export class BoardModel extends EventEmitter {
             this.getCell(row, col - 1),
             this.getCell(row, col + 1),
         ].filter(Boolean) as CellModel[]
+    }
+
+    private getBombNeighbors(cell: CellModel): CellModel[] {
+        const { row, col } = cell
+        return [
+            cell,
+            this.getCell(row - 1, col),
+            this.getCell(row + 1, col),
+            this.getCell(row, col - 1),
+            this.getCell(row, col + 1),
+            this.getCell(row - 1, col - 1),
+            this.getCell(row - 1, col + 1),
+            this.getCell(row + 1, col - 1),
+            this.getCell(row + 1, col + 1),
+        ].filter(Boolean) as CellModel[]
+    }
+
+    swapCells(row1: number, col1: number, row2: number, col2: number): void {
+        const cell1 = this.cells[row1]?.[col1]
+        const cell2 = this.cells[row2]?.[col2]
+
+        if (!cell1 || !cell2) return
+        ;[cell1.row, cell2.row] = [cell2.row, cell1.row]
+        ;[cell1.col, cell2.col] = [cell2.col, cell1.col]
+
+        this.cells[row1][col1] = cell2
+        this.cells[row2][col2] = cell1
     }
 
     fillEmpty() {

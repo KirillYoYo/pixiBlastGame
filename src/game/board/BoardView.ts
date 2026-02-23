@@ -129,6 +129,11 @@ export class BoardView extends Container {
                 view.on('pointertap', () => this.board.onCellClick(cell.row, cell.col))
             })
         })
+        /**/
+        EventBus.on(Events.CELLS_UPDATED, cells => {
+            this.board.cells = cells
+            this.updateCellViews()
+        })
     }
 
     private createParticlesFromRemoved(removed: CellModel[]): FlyingParticle[] {
@@ -335,6 +340,23 @@ export class BoardView extends Container {
                 p.alpha = 1 - fadeProgress
                 p.graphics.alpha = p.alpha
             }
+        })
+    }
+
+    private updateCellViews(): void {
+        this.cellViews.forEach((view, cellId) => {
+            const cell = view.model // модель внутри view
+            view.x = cell.col * (this.cellSize + this.gap)
+            view.y = cell.row * (this.cellSize + this.gap)
+
+            // Перепривязать обработчик клика (row/col изменились)
+            view.off('pointertap')
+            view.on('pointertap', () => {
+                this.board.onCellClick(cell.row, cell.col)
+            })
+
+            // Перерисовать цвет если type изменился
+            view.draw(this.cellSize)
         })
     }
 }

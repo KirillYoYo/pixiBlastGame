@@ -14,5 +14,9 @@
       "type": "red",
       "target": 30
     }
-  ]
+  ],
+  "boosters": {
+    "bomb": 5,
+    "teleport": 5
+  }
 }

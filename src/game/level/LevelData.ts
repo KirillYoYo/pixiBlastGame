@@ -9,4 +9,8 @@ export type LevelData = {
         type: CellType
         target: number
     }[]
+    boosters: {
+        bomb: number
+        teleport: number
+    }
 }
