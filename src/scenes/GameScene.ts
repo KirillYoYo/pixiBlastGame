@@ -5,7 +5,7 @@ import levelData from '@/assets/levels/level_001.json'
 import { LevelData } from '@/game/level/LevelData'
 import { GAME_HEIGHT, GAME_WIDTH } from '@/core/Game'
 import { GameLayout } from '@/UI/Layout'
-import { Assets, Graphics, NineSliceSprite, Sprite } from 'pixi.js'
+import { Assets, Graphics, NineSliceSprite, Sprite, TextStyle, Text, FillStyle } from 'pixi.js'
 import {
     bg_booster,
     bg_frame_moves,
@@ -23,6 +23,7 @@ export class GameScene extends Scene {
     private store!: GameStore
     private boardView!: BoardView
     layout!: GameLayout
+    private gameOverText?: Text
 
     async onEnter() {
         await Assets.load([
@@ -77,5 +78,57 @@ export class GameScene extends Scene {
 
     onExit() {
         this.removeChildren()
+    }
+
+    update(delta: number) {
+        super.update(delta)
+        if (this.store?.isLose()) {
+            this.showGameOver()
+        }
+    }
+
+    private showGameOver() {
+        // 🔥 GraphicsContext API v8
+        const bg = new Graphics()
+
+        // Сначала геометрия, потом стили
+        bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT)
+        bg.fill(0x000000) // чисто чёрный
+        bg.alpha = 0.7
+
+        this.addChild(bg)
+        this.gameOverBg = bg
+
+        // Текст
+        this.gameOverText = new Text({
+            text: '❌ Ходов больше нет!\n🔄 Нажмите F5 для рестарта',
+            style: new TextStyle({
+                fontSize: 48,
+                fill: '#ffffff',
+                stroke: { color: '#000000', width: 4 },
+                align: 'center',
+            }),
+        })
+        this.gameOverText.anchor.set(0.5)
+        this.gameOverText.x = GAME_WIDTH / 2
+        this.gameOverText.y = GAME_HEIGHT / 2
+        this.addChild(this.gameOverText)
+    }
+
+    private gameOverBg?: Graphics
+
+    // В restartGame():
+    private restartGame() {
+        this.gameOverText?.destroy()
+        this.gameOverBg?.destroy()
+        this.gameOverText = undefined
+        this.gameOverBg = undefined
+        // ...
+    }
+
+    private onRestartKey = (e: KeyboardEvent) => {
+        if (e.key.toLowerCase() === 'r' && this.gameOverText) {
+            window.removeEventListener('keydown', this.onRestartKey)
+        }
     }
 }

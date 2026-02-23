@@ -6,8 +6,9 @@ import { LevelData } from './LevelData'
 export class LevelParser {
     static parse(level: LevelData) {
         return {
-            board: new BoardModel(level.rows, level.cols, level.boosters, level.board),
-            moves: new MovesModel(level.moves),
+            board: new BoardModel(level),
+            // :-/
+            moves: new MovesModel(level.moves + 1),
             goals: new GoalsModel(level.goals),
         }
     }

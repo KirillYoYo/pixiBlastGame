@@ -26,12 +26,7 @@ export class BoardModel extends EventEmitter {
 
     private idCounter = 0
 
-    constructor(
-        rows: number,
-        cols: number,
-        boosters: LevelData['boosters'],
-        layout?: CellType[][]
-    ) {
+    constructor({ rows, cols, boosters, moves }: LevelData) {
         super()
         this.rows = rows
         this.cols = cols
@@ -52,6 +47,9 @@ export class BoardModel extends EventEmitter {
         // ;-)
         setTimeout(() => {
             EventBus.emit(Events.BOOSTERS_UPDATED, this.boosters)
+            EventBus.emit(Events.SET_MOVES, moves)
+            // =)
+            EventBus.emit(Events.MOVE_SPEND)
         }, 0)
     }
 
@@ -144,6 +142,9 @@ export class BoardModel extends EventEmitter {
             EventBus.emit(Events.SELECT_BOOSTER, '')
             this.selectedBooster = null
         }
+
+        /**/
+        EventBus.emit(Events.MOVE_SPEND)
     }
 
     boosterHandler(booster: string, cell) {
@@ -164,6 +165,7 @@ export class BoardModel extends EventEmitter {
             EventBus.emit(Events.SELECT_BOOSTER, '')
             this.selectedBooster = null
             this.teleportStep = null
+            EventBus.emit(Events.MOVE_SPEND)
         }
     }
 

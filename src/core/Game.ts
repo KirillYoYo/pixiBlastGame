@@ -2,8 +2,8 @@ import { Application, Container, TickerCallback } from 'pixi.js'
 import { SceneManager } from './SceneManager'
 import { GameScene } from '@/scenes/GameScene'
 
-export const GAME_WIDTH = 1600
-export const GAME_HEIGHT = 900
+export const GAME_WIDTH = 720
+export const GAME_HEIGHT = 1024
 
 export class Game {
     public app!: Application
@@ -48,5 +48,22 @@ export class Game {
 
         this.root.x = (window.innerWidth - GAME_WIDTH * scale) / 2
         this.root.y = (window.innerHeight - GAME_HEIGHT * scale) / 2
+
+        this.performResize()
+    }
+
+    private performResize() {
+        const { innerWidth, innerHeight } = window
+        const scaleX = innerWidth / GAME_WIDTH
+        const scaleY = innerHeight / GAME_HEIGHT
+        const scale = Math.min(scaleX, scaleY) // letterbox
+
+        // 🔥 Центрирование + scale
+        this.root.scale.set(scale)
+        this.root.x = (innerWidth - GAME_WIDTH * scale) / 2
+        this.root.y = (innerHeight - GAME_HEIGHT * scale) / 2
+
+        // 🔥 Обновить canvas под новый размер (важно для мобильных)
+        this.app.renderer.resize(innerWidth, innerHeight)
     }
 }

@@ -17,6 +17,8 @@ interface Events {
     [Events.SELECT_BOOSTER]: (name: string) => void
     [Events.BOOSTERS_UPDATED]: (val: LevelData['boosters']) => void
     [Events.CELLS_UPDATED]: (cells: CellModel[][]) => void
+    [Events.MOVE_SPEND]: () => void
+    [Events.SET_MOVES]: (val: number) => void
 }
 
 export const EventBus = new EventEmitter<Events>()
@@ -28,4 +30,6 @@ export const Events = {
     SELECT_BOOSTER: 'selectBooster',
     BOOSTERS_UPDATED: 'boostersUpdated',
     CELLS_UPDATED: 'cellsUpdated',
+    MOVE_SPEND: 'moveSpend',
+    SET_MOVES: 'setMoves',
 } as const

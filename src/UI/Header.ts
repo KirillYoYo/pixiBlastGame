@@ -66,5 +66,10 @@ export class Header extends Container {
         EventBus.on(Events.SCORE_CHANGED, scores => {
             scoresText.text = scores
         })
+
+        EventBus.on(Events.SET_MOVES, moves => {
+            movesText.text = moves
+            movesText.x = movesBg.x + movesBg.width / 2 - movesText.width / 2
+        })
     }
 }
