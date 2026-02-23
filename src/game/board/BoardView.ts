@@ -41,7 +41,6 @@ export class BoardView extends Container {
     private readonly SCATTER_FORCE = 8
     private readonly GATHER_SPEED = 5
     private readonly PARTICLE_SIZE = 15
-    private gatherCompleteCallback?: () => void
 
     constructor(board: BoardModel, cellSize: number) {
         super()
@@ -66,7 +65,32 @@ export class BoardView extends Container {
         EventBus.on(Events.BOARD_UPDATED, ({ removed, moved, spawned }) => {
             // Создаём частицы из удалённых клеток
             if (removed.length > 0) {
-                this.createParticlesFromRemoved(removed)
+                const particles = this.createParticlesFromRemoved(removed)
+
+                if (particles.length > 0) {
+                    const animId = this.animator.playSequence('particles', [
+                        {
+                            key: 'scatter',
+                            duration: 1000 + exponentFn(removed.length) * 50,
+                            onProgress: progress => {
+                                this.scatterAnimation(progress, particles)
+                            },
+                        },
+                        {
+                            key: 'gather',
+                            duration: 800,
+                            onProgress: progress => {
+                                this.gatherAnimation(progress, particles)
+                            },
+                        },
+                    ])
+
+                    this.animator.once(`${animId}:complete`, () => {
+                        particles.forEach(p => {
+                            p.graphics.destroy()
+                        })
+                    })
+                }
             }
 
             // удаляем клетки
@@ -105,31 +129,13 @@ export class BoardView extends Container {
                 view.on('pointertap', () => this.board.onCellClick(cell.row, cell.col))
             })
         })
-
-        // Подписываемся на события анимации частиц
-        this.setupParticleAnimations()
     }
 
-    private setupParticleAnimations() {
-        // Анимация сбора частиц (gather)
-        this.animator.on('particles:gather:start', () => {
-            this.particles.forEach(p => {
-                p.stage = 'gather'
-            })
-        })
-
-        // Анимация очистки частиц
-        this.animator.on('particles:clear:complete', () => {
-            this.particles.forEach(p => {
-                p.graphics.destroy()
-            })
-            this.particles = []
-        })
-    }
-
-    private createParticlesFromRemoved(removed: CellModel[]) {
+    private createParticlesFromRemoved(removed: CellModel[]): FlyingParticle[] {
         const gatherX = this.width / 2
         const gatherY = -120
+
+        const particles: FlyingParticle[] = []
 
         let centerX = 0,
             centerY = 0
@@ -185,7 +191,7 @@ export class BoardView extends Container {
 
                 const particleId = `particle_${cell.id}_${i}`
 
-                this.particles.push({
+                particles.push({
                     graphics: particle,
                     x: startX,
                     y: startY,
@@ -201,67 +207,9 @@ export class BoardView extends Container {
             }
         })
 
+        return particles
+
         // Если есть частицы, запускаем анимацию через менеджер
-        if (this.particles.length > 0) {
-            this.animator.playSequence('particles', [
-                {
-                    key: 'scatter',
-                    duration: 1000 + exponentFn(removed.length) * 50,
-                    onProgress: progress => {
-                        // мерцание
-                        if (progress > 0.8) {
-                            this.particles.forEach(p => {
-                                if (p.graphics) {
-                                    p.graphics.alpha = 0.9 + Math.sin(progress * 20) * 0.1
-                                }
-                            })
-                        }
-                    },
-                },
-                {
-                    key: 'gather',
-                    duration: 1500,
-                    onProgress: progress => {
-                        this.particles.forEach(p => {
-                            if (p.stage !== 'gather') {
-                                p.stage = 'gather'
-                            }
-
-                            const dx = p.targetX - p.x
-                            const dy = p.targetY - p.y
-
-                            p.x += dx * 0.05 * this.GATHER_SPEED * progress
-                            p.y += dy * 0.05 * this.GATHER_SPEED * progress
-
-                            // Уменьшаем прозрачность в конце пути
-                            const distance = Math.sqrt(dx * dx + dy * dy)
-                            if (distance < 50) {
-                                p.alpha *= 0.95
-                                p.graphics.alpha = p.alpha
-                            }
-
-                            // Плавное затухание в конце
-                            if (progress > 0.7) {
-                                const fadeProgress = (progress - 0.7) / 0.3
-                                p.alpha = 1 - fadeProgress
-                                p.graphics.alpha = p.alpha
-                            }
-                        })
-                    },
-                },
-            ])
-
-            this.animator.once('particles:sequenceComplete', () => {
-                this.particles.forEach(p => {
-                    p.graphics.destroy()
-                })
-                this.particles = []
-
-                // EventBus.emit(Events.PARTICLE_ANIMATION_COMPLETE, {
-                //     particlesCount: this.particles.length,
-                // })
-            })
-        }
     }
 
     private createCellView(cell: CellModel, row: number, col: number) {
@@ -299,47 +247,94 @@ export class BoardView extends Container {
                 falling.view.y = falling.startY + (falling.targetY - falling.startY) * easedProgress
             }
         }
-
-        // Анимация частиц
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i]
-
-            if (p.stage === 'scatter') {
-                // Фаза разлёта
-                p.x += p.vx * delta.deltaTime
-                p.y += p.vy * delta.deltaTime
-
-                // Замедление
-                p.vx *= 0.98
-                p.vy *= 0.98
-
-                // Добавляем небольшую гравитацию
-                p.vy += 0.1 * delta.deltaTime
-
-                // Обновляем позицию графики
-                p.graphics.x = p.x
-                p.graphics.y = p.y
-
-                // Добавляем вращение
-                p.graphics.rotation += 0.05 * delta.deltaTime
-            } else if (p.stage === 'gather') {
-                const dx = p.targetX - p.x
-                const dy = p.targetY - p.y
-
-                p.x += dx * 0.05 * this.GATHER_SPEED * delta.deltaTime
-                p.y += dy * 0.05 * this.GATHER_SPEED * delta.deltaTime
-
-                p.graphics.x = p.x
-                p.graphics.y = p.y
-                p.graphics.rotation += 0.05 * delta.deltaTime
-            }
-        }
     }
 
     public destroy() {
-        this.animator.stop()
+        // this.animator.stop()
         this.animator.destroy()
         Ticker.shared.remove(this.update, this)
         super.destroy()
+    }
+
+    acs = 1.1
+
+    scatterAnimation(progress: number, particles: FlyingParticle[]) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i]
+            if (p.stage !== 'scatter') {
+                continue
+            }
+
+            if (progress < 0.3) {
+                if (this.acs < 1.2) {
+                    this.acs = 1.6
+                }
+                this.acs += 0.003
+            }
+            if (progress > 0.3) {
+                this.acs = 1.1
+            }
+            if (progress > 0.6) {
+                p.vx *= 0.98
+                p.vy *= 0.98
+            }
+
+            // Фаза разлёта
+            p.x += p.vx * this.acs
+            p.y += p.vy * this.acs
+
+            // Замедление
+            // p.vx *= 0.98
+            // p.vy *= 0.98
+
+            // Добавляем небольшую гравитацию
+            p.vy += 0.1 * 1.1
+
+            // Обновляем позицию графики
+            p.graphics.x = p.x
+            p.graphics.y = p.y
+
+            // Добавляем вращение
+            p.graphics.rotation += 0.05 * 1.1
+        }
+
+        // мерцание
+        if (progress > 0.8) {
+            particles.forEach(p => {
+                if (p.graphics) {
+                    p.graphics.alpha = 0.9 + Math.sin(progress * 20) * 0.1
+                }
+            })
+        }
+    }
+    gatherAnimation(progress: number, particles: FlyingParticle[]) {
+        particles.forEach(p => {
+            p.stage = 'gather'
+
+            const dx = p.targetX - p.x
+            const dy = p.targetY - p.y
+
+            // todo ограничить до targetX
+            p.x += dx * 0.05 * this.GATHER_SPEED * 1.1
+            p.y += dy * 0.05 * this.GATHER_SPEED * 1.1
+
+            p.graphics.x = p.x
+            p.graphics.y = p.y
+            p.graphics.rotation += 0.05 * 1.1
+
+            // Уменьшаем прозрачность в конце пути
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance < 50) {
+                p.alpha *= 0.95
+                p.graphics.alpha = p.alpha
+            }
+
+            // Плавное затухание в конце
+            if (progress > 0.7) {
+                const fadeProgress = (progress - 0.7) / 0.3
+                p.alpha = 1 - fadeProgress
+                p.graphics.alpha = p.alpha
+            }
+        })
     }
 }

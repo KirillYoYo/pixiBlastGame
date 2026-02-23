@@ -7,21 +7,24 @@ interface SequenceStep {
     onProgress?: (progress: number) => void
 }
 
+interface ActiveAnimation {
+    id: string
+    key: string
+    elapsed: number
+    duration: number
+    easing: (t: number) => number
+    onProgress?: (progress: number) => void
+    onComplete?: () => void
+    sequence?: SequenceStep[]
+    sequenceIndex: number
+    sequenceKey: string
+}
+
 export class AdvancedAnimationManager extends EventEmitter {
     private ticker: Ticker
-    private currentAnimation: {
-        key: string
-        elapsed: number
-        duration: number
-        easing: (t: number) => number
-        onProgress?: (progress: number) => void
-        onComplete?: () => void
-    } | null = null
-
-    private sequence: SequenceStep[] | null = null
-    private sequenceIndex: number = 0
-    private sequenceKey: string = ''
+    private activeAnimations: Map<string, ActiveAnimation> = new Map()
     private isUpdating: boolean = false
+    private nextId: number = 0
 
     constructor(ticker: Ticker = Ticker.shared) {
         super()
@@ -29,52 +32,92 @@ export class AdvancedAnimationManager extends EventEmitter {
         this.ticker.add(this.update, this)
     }
 
-    playSequence(key: string, steps: SequenceStep[]) {
-        this.stop()
-
-        this.sequence = steps
-        this.sequenceIndex = 0
-        this.sequenceKey = key
-        this.emit(`${key}:sequenceStart`)
-
-        this.startSequenceStep()
+    // Генерирует уникальный ID для анимации
+    private generateId(): string {
+        return `anim_${Date.now()}_${this.nextId++}`
     }
 
-    private startSequenceStep() {
-        if (!this.sequence || this.sequenceIndex >= this.sequence.length) {
-            this.emit(`${this.sequenceKey}:sequenceComplete`)
-            this.sequence = null
-            this.sequenceKey = ''
-            return
-        }
+    // Запускает последовательность анимаций
+    playSequence(key: string, steps: SequenceStep[]): string {
+        const animationId = this.generateId()
 
-        const step = this.sequence[this.sequenceIndex]
-
-        // Важно: сохраняем ссылку на onProgress и onComplete из шага
-        const stepOnProgress = step.onProgress
-        const stepKey = step.key
-
-        this.currentAnimation = {
-            key: stepKey,
+        const animation: ActiveAnimation = {
+            id: animationId,
+            key,
             elapsed: 0,
-            duration: step.duration,
-            easing: step.easing || ((t: number) => t),
-            onProgress: (progress: number) => {
-                if (this.currentAnimation?.key === stepKey) {
-                    stepOnProgress?.(progress)
-                }
-            },
-            onComplete: () => {
-                this.emit(`${this.sequenceKey}:stepComplete`, stepKey)
-
-                this.currentAnimation = null
-
-                this.sequenceIndex++
-                this.startSequenceStep()
-            },
+            duration: steps[0].duration,
+            easing: steps[0].easing || ((t: number) => t),
+            onProgress: steps[0].onProgress,
+            sequence: steps,
+            sequenceIndex: 0,
+            sequenceKey: key,
         }
 
-        this.emit(`${this.sequenceKey}:stepStart`, stepKey)
+        this.activeAnimations.set(animationId, animation)
+        this.emit(`${key}:sequenceStart`, { animationId })
+        this.emit(`${key}:stepStart`, { animationId, stepKey: steps[0].key })
+        this.emit(`${animationId}:end`, { animationId, stepKey: steps[0].key })
+
+        return animationId // возвращаем ID, чтобы можно было управлять анимацией
+    }
+
+    // Запускает одиночную анимацию
+    play(
+        key: string,
+        duration: number,
+        options?: {
+            easing?: (t: number) => number
+            onProgress?: (progress: number) => void
+            onComplete?: () => void
+        }
+    ): string {
+        const animationId = this.generateId()
+
+        const animation: ActiveAnimation = {
+            id: animationId,
+            key,
+            elapsed: 0,
+            duration,
+            easing: options?.easing || ((t: number) => t),
+            onProgress: options?.onProgress,
+            onComplete: options?.onComplete,
+            sequenceIndex: -1,
+            sequenceKey: key,
+        }
+
+        this.activeAnimations.set(animationId, animation)
+        this.emit(`${key}:start`, { animationId })
+
+        return animationId
+    }
+
+    // Переход к следующему шагу в последовательности
+    private advanceSequence(animation: ActiveAnimation) {
+        if (!animation.sequence) return false
+
+        animation.sequenceIndex++
+
+        if (animation.sequenceIndex >= animation.sequence.length) {
+            // Последовательность завершена
+            this.emit(`${animation.sequenceKey}:sequenceComplete`, { animationId: animation.id })
+            return true // завершено
+        }
+
+        const nextStep = animation.sequence[animation.sequenceIndex]
+
+        // Обновляем параметры текущей анимации для нового шага
+        animation.elapsed = 0
+        animation.duration = nextStep.duration
+        animation.easing = nextStep.easing || ((t: number) => t)
+        animation.onProgress = nextStep.onProgress
+        animation.key = nextStep.key
+
+        this.emit(`${animation.sequenceKey}:stepStart`, {
+            animationId: animation.id,
+            stepKey: nextStep.key,
+        })
+
+        return false // не завершено, продолжаем
     }
 
     private update = () => {
@@ -82,33 +125,51 @@ export class AdvancedAnimationManager extends EventEmitter {
         this.isUpdating = true
 
         try {
-            if (!this.currentAnimation) {
-                return
-            }
+            // Проходим по всем активным анимациям
+            for (const [id, animation] of this.activeAnimations) {
+                // Обновляем время
+                animation.elapsed += this.ticker.deltaMS
 
-            this.currentAnimation.elapsed += this.ticker.deltaMS
+                const progress = Math.min(animation.elapsed / animation.duration, 1)
 
-            const progress = Math.min(
-                this.currentAnimation.elapsed / this.currentAnimation.duration,
-                1
-            )
+                const easedProgress = animation.easing(progress)
 
-            const easedProgress = this.currentAnimation.easing(progress)
+                // Вызываем onProgress если есть
+                if (animation.onProgress) {
+                    animation.onProgress(easedProgress)
+                }
 
-            if (this.currentAnimation.onProgress) {
-                this.currentAnimation.onProgress(easedProgress)
-            }
+                // Эмитим событие прогресса
+                this.emit(`${animation.key}:progress`, {
+                    animationId: id,
+                    progress: easedProgress,
+                })
 
-            this.emit(`${this.currentAnimation.key}:progress`, easedProgress)
+                // Проверяем завершение текущего шага
+                if (progress >= 1) {
+                    if (animation.sequence) {
+                        // Это последовательность - переходим к следующему шагу
+                        const completed = this.advanceSequence(animation)
 
-            if (progress >= 1) {
-                // Сохраняем onComplete перед тем как обнулить currentAnimation
-                const onComplete = this.currentAnimation.onComplete
+                        if (completed) {
+                            // Последовательность полностью завершена
+                            this.activeAnimations.delete(id)
 
-                this.emit(`${this.currentAnimation.key}:complete`)
+                            if (animation.onComplete) {
+                                animation.onComplete()
+                            }
+                            this.emit(`${animation.sequenceKey}:complete`, { animationId: id })
+                            this.emit(`${id}:complete`)
+                        }
+                    } else {
+                        // Одиночная анимация завершена
+                        this.activeAnimations.delete(id)
 
-                if (onComplete) {
-                    onComplete()
+                        if (animation.onComplete) {
+                            animation.onComplete()
+                        }
+                        this.emit(`${animation.key}:complete`, { animationId: id })
+                    }
                 }
             }
         } catch (error) {
@@ -118,14 +179,42 @@ export class AdvancedAnimationManager extends EventEmitter {
         }
     }
 
-    stop() {
-        this.currentAnimation = null
-        this.sequence = null
-        this.sequenceIndex = 0
-        this.sequenceKey = ''
+    // Остановить конкретную анимацию по ID
+    stop(animationId: string) {
+        const animation = this.activeAnimations.get(animationId)
+        if (animation) {
+            this.emit(`${animation.key}:stopped`, { animationId })
+            this.activeAnimations.delete(animationId)
+        }
+    }
+
+    // Остановить все анимации с определённым ключом
+    stopAllByKey(key: string) {
+        for (const [id, animation] of this.activeAnimations) {
+            if (animation.key === key || animation.sequenceKey === key) {
+                this.stop(id)
+            }
+        }
+    }
+
+    // Остановить все анимации
+    stopAll() {
+        this.activeAnimations.clear()
+        this.emit('allStopped')
+    }
+
+    // Проверить, активна ли анимация
+    isActive(animationId: string): boolean {
+        return this.activeAnimations.has(animationId)
+    }
+
+    // Получить количество активных анимаций
+    get activeCount(): number {
+        return this.activeAnimations.size
     }
 
     destroy() {
+        this.stopAll()
         this.ticker.remove(this.update, this)
         this.removeAllListeners()
     }
