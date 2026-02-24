@@ -25,7 +25,7 @@ export class GameLayout extends Container {
 
     layout() {
         const headerHeight = 100
-        const footerHeight = 140
+        const footerHeight = 120
         const contentHeight = GAME_HEIGHT - headerHeight - footerHeight
 
         this.header.height = headerHeight

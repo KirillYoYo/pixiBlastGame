@@ -14,6 +14,7 @@ export interface ButtonOptions {
 export class Button extends Container {
     private bg!: Sprite
     private icon?: Sprite
+    // @ts-ignore
     label!: Text
 
     constructor(options: ButtonOptions) {
@@ -43,6 +44,7 @@ export class Button extends Container {
             const tex = Assets.get(iconTexture)
             if (!tex) throw new Error(`Texture ${iconTexture} not loaded!`)
             this.icon = new Sprite(tex)
+            this.icon.scale = 0.8
             this.icon.anchor.set(0.5)
             this.icon.x = this.width / 2
             this.icon.y = height / 2
