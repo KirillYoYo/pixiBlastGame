@@ -1,4 +1,5 @@
 import { EventEmitter } from 'pixi.js'
+
 import { boostersNames, movedType, spawnedType } from '@/game/board/BoardModel'
 import { CellModel } from '@/game/board/CellModel'
 import { LevelData } from '@/game/level/LevelData'

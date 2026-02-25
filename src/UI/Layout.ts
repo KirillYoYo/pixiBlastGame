@@ -1,4 +1,5 @@
 import { Assets, Container, Graphics, Sprite } from 'pixi.js'
+
 import { GAME_HEIGHT, GAME_WIDTH } from '@/core/Game'
 import { setTransparentBg } from '@/helpers'
 import { Header } from '@/UI/Header'

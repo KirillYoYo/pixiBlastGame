@@ -1,8 +1,11 @@
-import { CellModel } from './CellModel'
-import { CellType } from '../types/CellType'
 import { EventEmitter } from 'pixi.js'
+
 import { EventBus, Events } from '@/game/store/EventBus'
 import { LevelData } from '@/game/level/LevelData'
+
+import { CellType } from '../types/CellType'
+
+import { CellModel } from './CellModel'
 
 export interface movedType {
     cell: CellModel

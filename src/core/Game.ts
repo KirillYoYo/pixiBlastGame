@@ -1,6 +1,8 @@
 import { Application, Container, Graphics, TickerCallback } from 'pixi.js'
-import { SceneManager } from './SceneManager'
+
 import { GameScene } from '@/scenes/GameScene'
+
+import { SceneManager } from './SceneManager'
 
 const aspect = window.innerHeight / window.innerWidth
 let gameW = 1600

@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js'
+
 import { bg_booster, icon_booster_bomb, icon_booster_teleport } from '@/consts'
 import { Button } from '@/UI/Button'
 import { EventBus, Events } from '@/game/store/EventBus'

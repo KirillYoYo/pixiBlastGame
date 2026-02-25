@@ -1,3 +1,5 @@
+import { Assets, Graphics, NineSliceSprite, TextStyle, Text } from 'pixi.js'
+
 import { Scene } from '@/core/RootContainer'
 import { GameStore } from '@/game/store/GameStore'
 import { BoardView } from '@/game/board/BoardView'
@@ -5,7 +7,6 @@ import levelData from '@/assets/levels/level_001.json'
 import { LevelData } from '@/game/level/LevelData'
 import { GAME_HEIGHT, GAME_WIDTH } from '@/core/Game'
 import { GameLayout } from '@/UI/Layout'
-import { Assets, Graphics, NineSliceSprite, Sprite, TextStyle, Text, FillStyle } from 'pixi.js'
 import {
     bg_booster,
     bg_frame_moves,

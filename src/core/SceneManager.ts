@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js'
+
 import { Scene } from '@/scenes/Scene'
 
 export class SceneManager {

@@ -1,4 +1,5 @@
 import { Assets, Container, NineSliceSprite, Sprite, Text } from 'pixi.js'
+
 import { bg_frame_moves, bg_moves, slot_frame_moves } from '@/consts'
 import { EventBus, Events } from '@/game/store/EventBus'
 

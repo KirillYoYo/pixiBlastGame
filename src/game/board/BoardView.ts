@@ -1,10 +1,12 @@
 import { Container, Ticker, Graphics, Bounds, Point } from 'pixi.js'
-import { BoardModel } from './BoardModel'
-import { CellView } from './CellView'
-import { CellModel } from './CellModel'
+
 import { EventBus, Events } from '@/game/store/EventBus'
 import { AdvancedAnimationManager } from '@/animationManager'
 import { exponentFn } from '@/helpers'
+
+import { BoardModel } from './BoardModel'
+import { CellView } from './CellView'
+import { CellModel } from './CellModel'
 
 const FALL_DURATION = 0.2
 

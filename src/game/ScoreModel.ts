@@ -1,4 +1,5 @@
 import { EventEmitter } from 'pixi.js'
+
 import { EventBus, Events } from '@/game/store/EventBus'
 
 export class ScoreModel extends EventEmitter {

@@ -1,6 +1,8 @@
 import { Container, Graphics } from 'pixi.js'
-import { CellModel } from './CellModel'
+
 import { CellType } from '../types/CellType'
+
+import { CellModel } from './CellModel'
 
 const COLORS: Record<CellType, number> = {
     red: 0xff4d4d,

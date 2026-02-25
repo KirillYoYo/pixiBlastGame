@@ -1,8 +1,8 @@
 // eslint.config.js — Phaser 3 + TS + Vite (2026)
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import importPlugin from 'eslint-plugin-import' // 🔥 НОВЫЙ!
-import prettierPlugin from 'eslint-plugin-prettier' // 🔥 Prettier
+import importPlugin from 'eslint-plugin-import'
+import prettierPlugin from 'eslint-plugin-prettier'
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript'
 
 export default tseslint.config(

@@ -1,5 +1,6 @@
-import { GAME_WIDTH } from '@/core/Game'
 import { Container, Graphics } from 'pixi.js'
+
+import { GAME_WIDTH } from '@/core/Game'
 
 // :-)
 export const setTransparentBg = (content: Container<any>, contentHeight: number) => {
