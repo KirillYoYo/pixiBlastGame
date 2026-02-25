@@ -39,7 +39,6 @@ export class GameScene extends Scene {
 
         this.store = new GameStore()
         this.store.loadLevel(levelData as unknown as LevelData)
-        this.boardView = new BoardView(this.store.board, CELL_SIZE)
 
         this.layout = new GameLayout()
         this.layout.layout()
@@ -55,7 +54,9 @@ export class GameScene extends Scene {
             bottomHeight: 100,
         })
         this.layout.content.addChild(playBg)
+        const cellSizeDimension = (this.layout.content.height - 120) / this.store.board.rows
 
+        this.boardView = new BoardView(this.store.board, Math.min(CELL_SIZE, cellSizeDimension))
         this.layout.content.addChild(this.boardView)
 
         const gap = 80
@@ -74,6 +75,7 @@ export class GameScene extends Scene {
 
         this.boardView.x = (GAME_WIDTH - this.boardView.width) / 2
         this.boardView.y = this.layout.content.height / 2 - this.boardView.height / 2
+        this.boardView.init()
     }
 
     onExit() {

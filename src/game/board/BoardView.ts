@@ -1,4 +1,4 @@
-import { Container, Ticker, Graphics } from 'pixi.js'
+import { Container, Ticker, Graphics, Bounds, Point } from 'pixi.js'
 import { BoardModel } from './BoardModel'
 import { CellView } from './CellView'
 import { CellModel } from './CellModel'
@@ -37,10 +37,15 @@ export class BoardView extends Container {
 
     private animator: AdvancedAnimationManager
 
-    private particles: FlyingParticle[] = []
     private readonly SCATTER_FORCE = 8
     private readonly GATHER_SPEED = 5
     private readonly PARTICLE_SIZE = 15
+    // @ts-ignore
+    private screenLocalPos: {
+        leftTop: Point
+        rightBottom: Point
+    } = {}
+    private bounds: Bounds
 
     constructor(board: BoardModel, cellSize: number) {
         super()
@@ -68,10 +73,11 @@ export class BoardView extends Container {
                 const particles = this.createParticlesFromRemoved(removed)
 
                 if (particles.length > 0) {
+                    const scatterTime = 1000 + exponentFn(removed.length) * 30
                     const animId = this.animator.playSequence('particles', [
                         {
                             key: 'scatter',
-                            duration: 1000 + exponentFn(removed.length) * 50,
+                            duration: Math.min(1500, scatterTime),
                             onProgress: progress => {
                                 this.scatterAnimation(progress, particles)
                             },
@@ -137,7 +143,7 @@ export class BoardView extends Container {
     }
 
     private createParticlesFromRemoved(removed: CellModel[]): FlyingParticle[] {
-        const gatherX = this.width / 2
+        const gatherX = this.bounds.width / 2
         const gatherY = -120
 
         const particles: FlyingParticle[] = []
@@ -159,8 +165,8 @@ export class BoardView extends Container {
             if (!view) return
 
             // Получаем позицию удалённой клетки
-            const startX = view.x
-            const startY = view.y
+            const startX = view.x + this.cellSize / 2
+            const startY = view.y + this.cellSize / 2
 
             // Создаём несколько частиц из каждой клетки
             const particlesCount = removed.length + exponentFn(removed.length)
@@ -184,7 +190,7 @@ export class BoardView extends Container {
                 const speed = this.SCATTER_FORCE * (0.8 + Math.random() * 0.7)
 
                 const particle = new Graphics()
-                particle.circle(0, 0, this.PARTICLE_SIZE / 2)
+                particle.circle(0, 0, this.PARTICLE_SIZE / 3 + Math.random() * 6)
                 particle.fill(cell.type)
                 particle.stroke({ width: 1, color: 0xffffff })
 
@@ -202,7 +208,7 @@ export class BoardView extends Container {
                     y: startY,
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed - 2,
-                    targetX: gatherX + (Math.random() - 0.5) * 20,
+                    targetX: gatherX,
                     targetY: gatherY + (Math.random() - 0.5) * 30,
                     stage: 'scatter',
                     alpha: 1,
@@ -289,8 +295,8 @@ export class BoardView extends Container {
             p.y += p.vy * this.acs
 
             // Замедление
-            // p.vx *= 0.98
-            // p.vy *= 0.98
+            p.vx *= 0.98
+            p.vy *= 0.98
 
             // Добавляем небольшую гравитацию
             p.vy += 0.1 * 1.1
@@ -301,45 +307,66 @@ export class BoardView extends Container {
 
             // Добавляем вращение
             p.graphics.rotation += 0.05 * 1.1
+
+            const isBorders = Math.floor(Math.random() * (1 + 1))
+
+            const gap = 5
+            const { leftTop, rightBottom } = this.screenLocalPos
+            if (p.x <= leftTop.x && isBorders) {
+                p.graphics.x = leftTop.x + gap
+                p.x = leftTop.x + gap
+            }
+            if (p.x >= rightBottom.x && isBorders) {
+                p.graphics.x = rightBottom.x - gap
+                p.x = rightBottom.x - gap
+            }
+            // if (p.y <= 0 && isBorders) {
+            //     p.graphics.y = leftTop.y + gap
+            //     p.y = leftTop.y + gap
+            // }
+            // if (p.y >= rightBottom.y && isBorders) {
+            //     p.graphics.y = rightBottom.y - gap
+            //     p.y = rightBottom.y - gap
+            // }
         }
 
         // мерцание
-        if (progress > 0.8) {
-            particles.forEach(p => {
-                if (p.graphics) {
-                    p.graphics.alpha = 0.9 + Math.sin(progress * 20) * 0.1
-                }
-            })
-        }
+        // if (progress > 0.8) {
+        //     particles.forEach(p => {
+        //         if (p.graphics) {
+        //             p.graphics.alpha = 0.9 + Math.sin(progress * 20) * 0.1
+        //         }
+        //     })
+        // }
     }
     gatherAnimation(progress: number, particles: FlyingParticle[]) {
         particles.forEach(p => {
             p.stage = 'gather'
 
+            if (progress < Math.random() * 0.2) return
+
             const dx = p.targetX - p.x
             const dy = p.targetY - p.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
 
-            // todo ограничить до targetX
-            p.x += dx * 0.05 * this.GATHER_SPEED * 1.1
-            p.y += dy * 0.05 * this.GATHER_SPEED * 1.1
+            const speed = this.GATHER_SPEED * (0.8 + Math.random() * 0.7)
+
+            const finalSpeed = distance < 150 ? speed * 2.5 : speed
+
+            p.x += dx * 0.05 * finalSpeed * 1.1
+            p.y += dy * 0.05 * finalSpeed * 1.1
 
             p.graphics.x = p.x
             p.graphics.y = p.y
             p.graphics.rotation += 0.05 * 1.1
 
-            // Уменьшаем прозрачность в конце пути
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance < 50) {
-                p.alpha *= 0.95
-                p.graphics.alpha = p.alpha
-            }
-
-            // Плавное затухание в конце
+            // Затухание
+            if (distance < 50) p.alpha *= 0.95
             if (progress > 0.7) {
                 const fadeProgress = (progress - 0.7) / 0.3
                 p.alpha = 1 - fadeProgress
-                p.graphics.alpha = p.alpha
             }
+            p.graphics.alpha = p.alpha
         })
     }
 
@@ -358,5 +385,22 @@ export class BoardView extends Container {
             // Перерисовать цвет если type изменился
             view.draw(this.cellSize)
         })
+    }
+
+    init() {
+        // переводим глобальную точку экрана в локальные координаты текущей сцены
+        // @ts-ignore
+        const sceneParent = this.parent?.parent?.parent?.parent?.parent
+        if (!sceneParent) {
+            return
+        }
+        const leftTop = this.toLocal({ x: 0, y: 0 }, sceneParent)
+        const rightBottom = this.toLocal(
+            { x: window.innerWidth, y: window.innerHeight },
+            sceneParent
+        )
+        this.screenLocalPos.leftTop = leftTop
+        this.screenLocalPos.rightBottom = rightBottom
+        this.bounds = this.getBounds()
     }
 }

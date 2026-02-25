@@ -16,11 +16,13 @@ export interface spawnedType {
     spawnRow: number
 }
 
+export type boostersNames = 'bomb' | 'teleport'
+
 export class BoardModel extends EventEmitter {
     readonly rows: number
     readonly cols: number
     cells: CellModel[][] = []
-    selectedBooster: string | null = null
+    selectedBooster: boostersNames | null = null
     boosters: LevelData['boosters']
     teleportStep: CellModel | null = null
 
@@ -40,7 +42,7 @@ export class BoardModel extends EventEmitter {
             }
         }
 
-        EventBus.on(Events.SELECT_BOOSTER, (name: string) => {
+        EventBus.on(Events.SELECT_BOOSTER, (name: boostersNames | null) => {
             this.selectedBooster = name
         })
 
@@ -139,7 +141,7 @@ export class BoardModel extends EventEmitter {
                 [this.selectedBooster]: this.boosters[this.selectedBooster] - 1,
             }
             EventBus.emit(Events.BOOSTERS_UPDATED, this.boosters)
-            EventBus.emit(Events.SELECT_BOOSTER, '')
+            EventBus.emit(Events.SELECT_BOOSTER, null)
             this.selectedBooster = null
         }
 
@@ -147,7 +149,7 @@ export class BoardModel extends EventEmitter {
         EventBus.emit(Events.MOVE_SPEND)
     }
 
-    boosterHandler(booster: string, cell) {
+    boosterHandler(booster: string, cell: CellModel) {
         switch (booster) {
             case 'teleport':
                 return this.teleportHandler(cell)
@@ -162,7 +164,7 @@ export class BoardModel extends EventEmitter {
         } else {
             this.swapCells(this.teleportStep.row, this.teleportStep.col, cell.row, cell.col)
             EventBus.emit(Events.CELLS_UPDATED, this.cells)
-            EventBus.emit(Events.SELECT_BOOSTER, '')
+            EventBus.emit(Events.SELECT_BOOSTER, null)
             this.selectedBooster = null
             this.teleportStep = null
             EventBus.emit(Events.MOVE_SPEND)

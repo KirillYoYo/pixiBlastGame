@@ -1,5 +1,5 @@
 import { EventEmitter } from 'pixi.js'
-import { movedType, spawnedType } from '@/game/board/BoardModel'
+import { boostersNames, movedType, spawnedType } from '@/game/board/BoardModel'
 import { CellModel } from '@/game/board/CellModel'
 import { LevelData } from '@/game/level/LevelData'
 
@@ -14,7 +14,7 @@ interface Events {
         spawned: spawnedType[]
     }) => void
     [Events.SCORE_CHANGED]: (val: number) => void
-    [Events.SELECT_BOOSTER]: (name: string) => void
+    [Events.SELECT_BOOSTER]: (name: boostersNames | null) => void
     [Events.BOOSTERS_UPDATED]: (val: LevelData['boosters']) => void
     [Events.CELLS_UPDATED]: (cells: CellModel[][]) => void
     [Events.MOVE_SPEND]: () => void

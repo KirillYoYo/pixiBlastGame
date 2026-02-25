@@ -1,14 +1,30 @@
-import { Application, Container, TickerCallback } from 'pixi.js'
+import { Application, Container, Graphics, TickerCallback } from 'pixi.js'
 import { SceneManager } from './SceneManager'
 import { GameScene } from '@/scenes/GameScene'
 
-export const GAME_WIDTH = 720
-export const GAME_HEIGHT = 1024
+const aspect = window.innerHeight / window.innerWidth
+let gameW = 1600
+let gameH = 900
+
+if (aspect > 1) {
+    // портрет
+    gameW = 900
+    gameH = 1600
+} else {
+    // ландшафт
+    gameW = 1600
+    gameH = 900
+}
+
+export const GAME_WIDTH = gameW
+// export const GAME_HEIGHT = Math.round(GAME_WIDTH * (window.innerHeight / window.innerWidth))
+export const GAME_HEIGHT = gameH
 
 export class Game {
     public app!: Application
     public sceneManager!: SceneManager
     root: Container
+    contentCenter: Container
 
     async start() {
         this.app = new Application()
@@ -23,12 +39,16 @@ export class Game {
         document.getElementById('pixi-container')!.appendChild(this.app.canvas)
 
         this.root = new Container()
+        this.contentCenter = new Container()
         this.app.stage.addChild(this.root)
+        this.root.x = 0
+        this.root.y = 0
 
-        this.sceneManager = new SceneManager(this.root)
+        this.sceneManager = new SceneManager(this.contentCenter)
         this.sceneManager.changeScene(new GameScene())
 
         this.app.ticker.add(this.update as unknown as TickerCallback<this>, this)
+        this.root.addChild(this.contentCenter)
 
         window.addEventListener('resize', () => this.resize())
         this.resize()
@@ -44,10 +64,10 @@ export class Game {
 
         const scale = Math.min(scaleX, scaleY)
 
-        this.root.scale.set(scale)
+        this.contentCenter.scale.set(scale)
 
-        this.root.x = (window.innerWidth - GAME_WIDTH * scale) / 2
-        this.root.y = (window.innerHeight - GAME_HEIGHT * scale) / 2
+        this.contentCenter.x = (window.innerWidth - GAME_WIDTH * scale) / 2
+        this.contentCenter.y = (window.innerHeight - GAME_HEIGHT * scale) / 2
 
         this.performResize()
     }
@@ -59,9 +79,9 @@ export class Game {
         const scale = Math.min(scaleX, scaleY) // letterbox
 
         // 🔥 Центрирование + scale
-        this.root.scale.set(scale)
-        this.root.x = (innerWidth - GAME_WIDTH * scale) / 2
-        this.root.y = (innerHeight - GAME_HEIGHT * scale) / 2
+        this.contentCenter.scale.set(scale)
+        this.contentCenter.x = (innerWidth - GAME_WIDTH * scale) / 2
+        this.contentCenter.y = (innerHeight - GAME_HEIGHT * scale) / 2
 
         // 🔥 Обновить canvas под новый размер (важно для мобильных)
         this.app.renderer.resize(innerWidth, innerHeight)
