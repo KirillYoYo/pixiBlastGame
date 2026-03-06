@@ -28,14 +28,14 @@ export class GameScene extends Scene {
 
     async onEnter() {
         await Assets.load([
-            { alias: bg_frame_moves, src: '/assets/bg_frame_moves.png' },
-            { alias: img_bg_game, src: '/assets/img_bg_game.png' },
-            { alias: bg_frame_play, src: '/assets/bg_frame_play.png' },
-            { alias: bg_moves, src: '/assets/bg_moves.png' },
-            { alias: slot_frame_moves, src: '/assets/slot_frame_moves.png' },
-            { alias: bg_booster, src: '/assets/bg_booster.png' },
-            { alias: icon_booster_bomb, src: '/assets/icon_booster_bomb.png' },
-            { alias: icon_booster_teleport, src: '/assets/icon_booster_teleport.png' },
+            { alias: bg_frame_moves, src: './assets/bg_frame_moves.png' },
+            { alias: img_bg_game, src: './assets/img_bg_game.png' },
+            { alias: bg_frame_play, src: './assets/bg_frame_play.png' },
+            { alias: bg_moves, src: './assets/bg_moves.png' },
+            { alias: slot_frame_moves, src: './assets/slot_frame_moves.png' },
+            { alias: bg_booster, src: './assets/bg_booster.png' },
+            { alias: icon_booster_bomb, src: './assets/icon_booster_bomb.png' },
+            { alias: icon_booster_teleport, src: './assets/icon_booster_teleport.png' },
         ])
 
         this.store = new GameStore()
