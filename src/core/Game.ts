@@ -1,10 +1,21 @@
 import { Application, Container, Graphics, TickerCallback } from 'pixi.js'
+import { Stats } from 'pixi-stats'
 
 import { GameScene } from '@/scenes/GameScene'
+import { PartSceneParticleContainer } from '@/scenes/ParticlesTest/PartSceneParticleContainer'
+import { PartSceneDefault } from '@/scenes/ParticlesTest/PartSceneDefault'
 
 import { SceneManager } from './SceneManager'
 
+declare global {
+    interface Window {
+        __PIXI_APP__: Application
+    }
+}
+
 const aspect = window.innerHeight / window.innerWidth
+console.log('window.innerHeight', window.innerHeight)
+console.log('window.innerWidth', window.innerWidth)
 let gameW = 1600
 let gameH = 900
 
@@ -30,6 +41,7 @@ export class Game {
 
     async start() {
         this.app = new Application()
+        ;(window as any).__PIXI_APP__ = this.app
 
         await this.app.init({
             width: GAME_WIDTH,
@@ -46,8 +58,8 @@ export class Game {
         this.root.x = 0
         this.root.y = 0
 
-        this.sceneManager = new SceneManager(this.contentCenter)
-        this.sceneManager.changeScene(new GameScene())
+        SceneManager.init(this.contentCenter)
+        SceneManager.getInstance().changeScene(new PartSceneParticleContainer())
 
         this.app.ticker.add(this.update as unknown as TickerCallback<this>, this)
         this.root.addChild(this.contentCenter)
@@ -57,7 +69,7 @@ export class Game {
     }
 
     private update(delta: number) {
-        this.sceneManager.update(delta)
+        SceneManager.getInstance().update(delta)
     }
 
     private resize() {
@@ -87,5 +99,10 @@ export class Game {
 
         // 🔥 Обновить canvas под новый размер (важно для мобильных)
         this.app.renderer.resize(innerWidth, innerHeight)
+
+        const element = document.querySelector('#app')
+        const ticker = this.app.ticker
+
+        new Stats(this.app.renderer, ticker, element)
     }
 }
